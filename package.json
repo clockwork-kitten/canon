@@ -1,0 +1,39 @@
+{
+  "name": "@clockwork-kitten/canon",
+  "version": "0.1.0",
+  "description": "Standalone documentation-repo conformance tool for the clockwork-kitten studio: markdown lint, reference integrity, and llms.txt generation over one pinned mdast/GFM parser and one config.",
+  "type": "module",
+  "bin": {
+    "canon": "./src/cli/main.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "check": "bun src/cli/main.ts check",
+    "fix": "bun src/cli/main.ts fix",
+    "llms": "bun src/cli/main.ts llms",
+    "check:llms": "bun src/cli/main.ts llms --check"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1",
+    "markdownlint": "^0.38.0",
+    "mdast-util-from-markdown": "^2.0.3",
+    "mdast-util-gfm": "^3.1.0",
+    "mdast-util-to-string": "^4.0.0",
+    "micromark-extension-gfm": "^3.0.0",
+    "unist-util-visit": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^3.0.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.2"
+  }
+}

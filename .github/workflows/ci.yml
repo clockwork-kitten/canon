@@ -1,0 +1,40 @@
+name: ci
+
+# canon dogfoods its own conformance tooling on every PR: if the tool can't keep
+# this repo conformant, it isn't ready to ship. The run typechecks the source,
+# runs the test suite (with an 80% coverage gate), then runs `canon check`
+# (markdown lint + reference integrity) and verifies llms.txt is up to date —
+# all dogfooded against this checkout.
+#
+# canon's own code track (ESLint/Prettier/knip) is intentionally NOT run here yet
+# — see ROADMAP.md "Follow-ups": canon can't run the studio code track on itself
+# until conform is disentangled into the orchestrator that bundles it.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  conform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Test (with coverage gate)
+        run: bun run test
+      - name: Canon check — markdown and references (dogfood)
+        run: bun run check
+      - name: Verify llms.txt is up to date (dogfood)
+        run: bun run check:llms

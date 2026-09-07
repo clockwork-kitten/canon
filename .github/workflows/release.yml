@@ -1,0 +1,122 @@
+name: release
+
+# Deliberate, human-triggered release cutter for canon.
+# Run it from the Actions tab (workflow_dispatch), pick a version, and it:
+#   1. validates the version (vMAJOR.MINOR.PATCH) and that the tag is new,
+#   2. verifies the ci workflow is green on the target commit,
+#   3. creates + pushes the annotated version tag,
+#   4. generates release notes and publishes a GitHub Release,
+#   5. force-moves the major-line alias tag (v0.1 for 0.x, vN for >=1.0) so
+#      consumers can pin to `@v0.1` and still receive patch releases.
+#
+# NOTE: no release has been cut yet — canon is scaffolded to v0.1.0-ready.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, e.g. v0.1.0 (must be vMAJOR.MINOR.PATCH).'
+        required: true
+        type: string
+      ref:
+        description: 'Git ref to release from.'
+        required: false
+        type: string
+        default: main
+      skip-ci-check:
+        description: 'Release even if the ci workflow is not green on the target commit (use with care).'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Validate version and resolve target
+        id: check
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::version must match vMAJOR.MINOR.PATCH (got: $VERSION)"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+            echo "::error::tag already exists: $VERSION"
+            exit 1
+          fi
+          sha=$(git rev-parse HEAD)
+          ver="${VERSION#v}"
+          major="${ver%%.*}"
+          rest="${ver#*.}"
+          minor="${rest%%.*}"
+          if [ "$major" = "0" ]; then
+            alias="v0.${minor}"
+          else
+            alias="v${major}"
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "alias=$alias" >> "$GITHUB_OUTPUT"
+          echo "Releasing $VERSION at $sha; major-line alias: $alias"
+
+      - name: Verify CI is green on the target commit
+        if: ${{ !inputs.skip-ci-check }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.check.outputs.sha }}
+        run: |
+          set -euo pipefail
+          conclusion=$(gh run list --workflow ci.yml --commit "$SHA" \
+            --json status,conclusion \
+            --jq 'map(select(.status == "completed")) | (.[0].conclusion // "none")')
+          echo "Latest completed ci run for $SHA: ${conclusion}"
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::ci is not green on $SHA (conclusion: ${conclusion}). Re-run once ci passes, or set skip-ci-check."
+            exit 1
+          fi
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push version tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          git tag -a "$VERSION" -m "$VERSION"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --generate-notes \
+            --verify-tag
+
+      - name: Force-move major-line alias tag
+        env:
+          VERSION: ${{ inputs.version }}
+          ALIAS: ${{ steps.check.outputs.alias }}
+        run: |
+          set -euo pipefail
+          git tag -f "$ALIAS" "${VERSION}^{commit}"
+          git push -f origin "refs/tags/$ALIAS"
+          echo "Moved $ALIAS -> $VERSION"

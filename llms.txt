@@ -1,0 +1,8 @@
+# Clockwork Kitten — canon
+
+> Standalone documentation-repo conformance for the clockwork-kitten studio: markdown lint, reference integrity, and llms.txt generation over one pinned mdast/GFM parser and one config.
+
+## Documentation
+
+- [canon](README.md): Standalone documentation-repo conformance tool for the clockwork-kitten studio: markdown lint, reference integrity, and llms.txt generation over one pinned mdast/GFM parser and one config — with schema-aware entry operations and cross-repo intake to come.
+- [Roadmap — canon](ROADMAP.md): The sequenced plan for canon, the studio's standalone documentation-repo conformance tool. Status: ☐ todo · ◐ in progress · ☑ done · ⏸ deferred. Order is about dependencies, not urgency.

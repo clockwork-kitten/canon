@@ -1,0 +1,24 @@
+{
+  // Studio markdown standard — GitHub Flavored Markdown, intentionally relaxed.
+  // Rationale + full conventions: clockwork-kitten/ops docs/CONVENTIONS.md (CK-003).
+  // Mirror of the in-code baseline in src/config/baseline.ts; baseline.test.ts
+  // fails if the two drift, so there is exactly one studio standard.
+  "default": true,
+
+  // Prose wraps naturally / long reference lines are fine in a docs repo.
+  "MD013": false,
+
+  // We author in GFM; allow raw HTML if a doc ever needs it.
+  "MD033": false,
+
+  // Decision logs and roadmaps legitimately repeat headings
+  // (e.g. "Decision", "Context") across different entries.
+  "MD024": { "siblings_only": true },
+
+  // Allow both ``` fenced and indented where convenient; enforce fenced default.
+  "MD046": { "style": "fenced" },
+
+  // First-line H1 is our convention; keep it on (default true).
+  // Ordered lists: allow 1. 1. 1. or 1. 2. 3.
+  "MD029": { "style": "one_or_ordered" }
+}

@@ -48,10 +48,20 @@ the invariants. Carried over from the standards roadmap's v0.7.
 
 ## Release & versioning
 
+- canon is published to npm as `@clockwork-kitten/canon` (public scoped package).
+  It runs its TypeScript directly under Bun, so the published package ships source
+  — no build/`dist` step — and the `canon` bin resolves without compilation.
+- Consume it as a normal dependency: `bun add @clockwork-kitten/canon` (or pinned,
+  e.g. `@0.1.0`). `conform` depends on it this way.
 - Semantic-ish tags; breaking changes to a config's rules or the CLI bump the
-  major. Consuming repos pin to a tag and upgrade deliberately.
-- **No release is cut yet.** canon is scaffolded to `v0.1.0`-ready; cutting the
-  tag is a deliberate, human-approved step via the `release` workflow.
+  major. Consuming repos pin to a version and upgrade deliberately.
+- The `release` workflow (human-triggered `workflow_dispatch`) validates the
+  version, verifies CI is green, tags, publishes a GitHub Release, moves the
+  major-line alias, and publishes to npm. The npm publish is gated on an
+  `NPM_TOKEN` repo secret — absent it, the tag/Release still succeed and publish
+  no-ops.
+- **No release is cut yet.** canon is scaffolded to `v0.1.0`-ready and push-button;
+  cutting the tag is a deliberate, human-approved step.
 
 ## Open items
 

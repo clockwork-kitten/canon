@@ -48,18 +48,28 @@ the invariants. Carried over from the standards roadmap's v0.7.
 
 ## Release & versioning
 
-- canon is published to npm as `@clockwork-kitten/canon` (public scoped package).
-  It runs its TypeScript directly under Bun, so the published package ships source
-  — no build/`dist` step — and the `canon` bin resolves without compilation.
-- Consume it as a normal dependency: `bun add @clockwork-kitten/canon` (or pinned,
-  e.g. `@0.1.0`). `conform` depends on it this way.
+- canon is published privately to **GitHub Packages** as `@clockwork-kitten/canon`
+  (scoped to the clockwork-kitten org, staying private until a later move to
+  public npm). It runs its TypeScript directly under Bun, so the published package
+  ships source — no build/`dist` step — and the `canon` bin resolves without
+  compilation.
+- Consume it as a normal dependency. Add a committed `.npmrc` mapping the scope
+  (`@clockwork-kitten:registry=https://npm.pkg.github.com`), then
+  `bun add @clockwork-kitten/canon` (or pinned, e.g. `@0.1.0`). CI reads with the
+  auto-scoped `GITHUB_TOKEN` (`permissions: packages: read` + package access to
+  the repo, or org-internal visibility); local dev needs a personal `~/.npmrc`
+  with a `read:packages` token. `conform` depends on it this way.
 - Semantic-ish tags; breaking changes to a config's rules or the CLI bump the
   major. Consuming repos pin to a version and upgrade deliberately.
 - The `release` workflow (human-triggered `workflow_dispatch`) validates the
   version, verifies CI is green, tags, publishes a GitHub Release, moves the
-  major-line alias, and publishes to npm. The npm publish is gated on an
-  `NPM_TOKEN` repo secret — absent it, the tag/Release still succeed and publish
-  no-ops.
+  major-line alias, and publishes to GitHub Packages using the workflow's
+  built-in `GITHUB_TOKEN` (`packages: write`) — no external secret required. The
+  publish is gated on the release job (so tag/Release happen first) and on the
+  clockwork-kitten owner.
+- Moving to public npm later is a ~2-line change: drop `publishConfig.registry`,
+  swap the publish token in `release.yml`, and delete consumers' `.npmrc`
+  registry line — no rename.
 - **No release is cut yet.** canon is scaffolded to `v0.1.0`-ready and push-button;
   cutting the tag is a deliberate, human-approved step.
 

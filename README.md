@@ -21,18 +21,43 @@ guarantee intact is the whole point of the tool.
 
 ## Install
 
-canon is published to npm as [`@clockwork-kitten/canon`](https://www.npmjs.com/package/@clockwork-kitten/canon)
-and consumed as a normal dependency. It runs its TypeScript directly under Bun, so there is no build
-step — the `canon` binary works straight from the installed source.
+canon is published privately to **GitHub Packages** as `@clockwork-kitten/canon`, scoped to the
+clockwork-kitten org. It runs its TypeScript directly under Bun, so there is no build step — the
+`canon` binary works straight from the installed source.
+
+Consumers add a committed `.npmrc` that maps the scope to the GitHub Packages registry:
+
+```ini
+# .npmrc
+@clockwork-kitten:registry=https://npm.pkg.github.com
+```
+
+Then install (pin to a version):
 
 ```sh
 bun add -D @clockwork-kitten/canon        # latest
 bun add -D @clockwork-kitten/canon@0.1.0  # pinned
 ```
 
+**Auth.** GitHub Packages requires a token even for reads:
+
+- **CI:** the consuming workflow reads with the auto-scoped `GITHUB_TOKEN` — add
+  `permissions: { packages: read }` to the job, and grant the canon package access to the
+  consuming repo (or make the package org-internal so all org repos can read it).
+- **Local dev:** add a personal token with the `read:packages` scope to your `~/.npmrc` once:
+
+  ```ini
+  # ~/.npmrc
+  //npm.pkg.github.com/:_authToken=<YOUR_READ_PACKAGES_TOKEN>
+  ```
+
 `conform` consumes canon this way (one tool among the studio's global check); any pure-documentation
 repo can depend on it directly. Releases are cut deliberately by the `release` workflow, which tags,
-publishes a GitHub Release, and publishes the package to npm (see [ROADMAP.md](ROADMAP.md)).
+publishes a GitHub Release, and publishes the package to GitHub Packages (see [ROADMAP.md](ROADMAP.md)).
+
+> Moving to public npm later is a ~2-line change: drop `publishConfig.registry` from
+> `package.json`, swap the publish token in `release.yml`, and delete the registry line from
+> consumers' `.npmrc`. No package rename — the `@clockwork-kitten/canon` name is unchanged.
 
 ## Usage
 

@@ -2,15 +2,40 @@
   "name": "@clockwork-kitten/canon",
   "version": "0.1.0",
   "description": "Standalone documentation-repo conformance tool for the clockwork-kitten studio: markdown lint, reference integrity, and llms.txt generation over one pinned mdast/GFM parser and one config.",
+  "keywords": [
+    "markdown",
+    "markdownlint",
+    "documentation",
+    "conformance",
+    "llms.txt",
+    "mdast",
+    "gfm",
+    "linter"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clockwork-kitten/canon.git"
+  },
+  "homepage": "https://github.com/clockwork-kitten/canon#readme",
+  "bugs": {
+    "url": "https://github.com/clockwork-kitten/canon/issues"
+  },
   "type": "module",
   "bin": {
     "canon": "./src/cli/main.ts"
   },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
-    "src"
+    "src/**/*.ts",
+    "!src/**/*.test.ts"
   ],
   "scripts": {
     "test": "vitest run --coverage",

@@ -21,11 +21,18 @@ guarantee intact is the whole point of the tool.
 
 ## Install
 
-canon is a TS/Bun package. In a documentation repo:
+canon is published to npm as [`@clockwork-kitten/canon`](https://www.npmjs.com/package/@clockwork-kitten/canon)
+and consumed as a normal dependency. It runs its TypeScript directly under Bun, so there is no build
+step — the `canon` binary works straight from the installed source.
 
 ```sh
-bun add -D @clockwork-kitten/canon
+bun add -D @clockwork-kitten/canon        # latest
+bun add -D @clockwork-kitten/canon@0.1.0  # pinned
 ```
+
+`conform` consumes canon this way (one tool among the studio's global check); any pure-documentation
+repo can depend on it directly. Releases are cut deliberately by the `release` workflow, which tags,
+publishes a GitHub Release, and publishes the package to npm (see [ROADMAP.md](ROADMAP.md)).
 
 ## Usage
 

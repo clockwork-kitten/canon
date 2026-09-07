@@ -7,7 +7,13 @@ name: release
 #   3. creates + pushes the annotated version tag,
 #   4. generates release notes and publishes a GitHub Release,
 #   5. force-moves the major-line alias tag (v0.1 for 0.x, vN for >=1.0) so
-#      consumers can pin to `@v0.1` and still receive patch releases.
+#      consumers can pin to `@v0.1` and still receive patch releases,
+#   6. publishes the package to npm as @clockwork-kitten/canon (public), so
+#      `conform` and any docs repo can consume it as a normal dependency.
+#
+# The npm publish step is gated on an NPM_TOKEN repo secret: without it the job
+# no-ops gracefully (tag + GitHub Release still happen). canon runs its TypeScript
+# directly under Bun, so the published `bin` resolves with no build step.
 #
 # NOTE: no release has been cut yet — canon is scaffolded to v0.1.0-ready.
 
@@ -120,3 +126,52 @@ jobs:
           git tag -f "$ALIAS" "${VERSION}^{commit}"
           git push -f origin "refs/tags/$ALIAS"
           echo "Moved $ALIAS -> $VERSION"
+
+  # Publish the package to npm after the tag + GitHub Release exist. Gated on the
+  # NPM_TOKEN secret: if it is absent the job logs a warning and exits 0, so the
+  # release still succeeds without a broken publish. canon runs its TypeScript
+  # directly under Bun, so there is no build — `bun publish` ships the source.
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify package.json version matches the release tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          pkg=$(node -p "require('./package.json').version")
+          if [ "v$pkg" != "$VERSION" ]; then
+            echo "::error::package.json version (v$pkg) does not match release tag ($VERSION). Bump package.json before releasing."
+            exit 1
+          fi
+          echo "package.json version matches $VERSION"
+
+      - name: Publish to npm (gated on NPM_TOKEN)
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NPM_TOKEN:-}" ]; then
+            echo "::warning::NPM_TOKEN is not set — skipping npm publish. The tag and GitHub Release were still created."
+            exit 0
+          fi
+          printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
+          bun publish --access public
+          echo "Published @clockwork-kitten/canon to npm."
+

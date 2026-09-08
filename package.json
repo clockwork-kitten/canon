@@ -43,7 +43,10 @@
     "check": "bun src/cli/main.ts check",
     "fix": "bun src/cli/main.ts fix",
     "llms": "bun src/cli/main.ts llms",
-    "check:llms": "bun src/cli/main.ts llms --check"
+    "check:llms": "bun src/cli/main.ts llms --check",
+    "drain": "bun src/cli/main.ts drain",
+    "build": "bun src/cli/main.ts build",
+    "check:build": "bun src/cli/main.ts build --check"
   },
   "dependencies": {
     "jsonc-parser": "^3.3.1",

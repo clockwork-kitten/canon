@@ -24,7 +24,25 @@ Fresh git history; the code track is deliberately left behind in `conform`.
 | 4 | Dogfood canon on itself | ☑ | canon's own markdown passes `canon check`; generates its own `llms.txt`; in-code baseline mirrored by `.markdownlint.jsonc` with a parity test |
 | 5 | CI + release scaffolding | ☑ | `ci` workflow: typecheck + tests + `canon check` + `canon llms --check`; `release` workflow present (human-triggered, not yet run). Scaffolded to `v0.1.0`-ready |
 
-## v0.2 — Schema-aware entry operations + cross-repo intake
+## v0.2 — Event-sourced decision log (MVS)
+
+The single-source-of-truth reframe: truth is an **append-only event log**, and
+every doc is a **deterministic projection** of it (like a compacted Kafka topic
+reconstructing a table). Capture is conflict-free; a single serialized *drain*
+(the "elected leader") assigns IDs, so concurrent authors never race. This is the
+smallest slice that proves the model end-to-end; the schema-aware entry ops below
+become the expansion path (more record types, cross-repo intake) on this
+substrate rather than a parallel design.
+
+| # | Task | Status | Notes |
+| --- | --- | --- | --- |
+| 1 | Log primitives: intake + event types, content-addressed IDs | ☑ | `src/log/events.ts`; opaque sha256 canonical id (nonce-seeded) + stable per-type `DEC-000N` display id; `schemaVersion` stamped on every event |
+| 2 | The drain (single-writer serializer) | ☑ | `src/log/drain.ts`; pure `drain(existing, pending)` assigns monotonic `seq` + display id, idempotent skip of already-committed intake; the Action just calls it |
+| 3 | Deterministic projector + renderers | ☑ | `src/log/project.ts` folds events → records (derives `accepted`/`superseded` + back-links); `src/log/render.ts` emits `decisions/*.md`, an index, and `graph.json` |
+| 4 | CLI + store + drain Action | ☑ | `canon add-decision` / `drain` / `build [--check]`; `.github/workflows/drain.yml` (concurrency 1, inert until `intake/` exists); CI projection-lock via `check:build` |
+| 5 | Expansion (deferred) | ☐ | More record types (TERM/NOTE), compaction (fold state → snapshot), federation, coverage — layered additively on the log |
+
+## v0.2b — Schema-aware entry operations + cross-repo intake
 
 Typed, schema-aware entry operations agents call instead of splicing prose — the
 doc tool's original structural contribution — plus a standardized way to propose

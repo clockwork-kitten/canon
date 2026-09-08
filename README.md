@@ -73,6 +73,27 @@ canon llms --check          # fail if llms.txt is out of date (CI gate)
 `check` is the failing gate CI runs; `fix` is authoring-time only (it never fails on unfixable
 residue) so it can't fight the human-merge gate.
 
+## Decision log (event-sourced docs)
+
+canon can also treat a folder of records as an **append-only event log** whose docs are a
+deterministic projection — the log is the source of truth, and every `.md` under `decisions/`
+plus `graph.json` is generated from it. Capture is conflict-free; a single serialized "drain"
+assigns IDs, so concurrent authors never race for a number:
+
+```sh
+canon add-decision "Adopt Bun" --actor jc --body "Use Bun everywhere."   # stage intake/ (no ID yet)
+canon add-decision "Drop npm" --supersedes DEC-0001                      # supersede an earlier one
+canon drain                 # single writer: assign DEC-000N, commit to log/
+canon build                 # project log/ -> decisions/*.md + graph.json
+canon build --check         # fail if generated docs were hand-edited or are stale (CI gate)
+```
+
+The flow is: `add-decision` writes a conflict-free file to `intake/` with **no** ID; the
+`canon-drain` Action (a single-concurrency writer, the "elected leader") runs on merge to `main`,
+assigns each a monotonic `DEC-000N` display ID plus an opaque content-addressed canonical ID, and
+appends it to `log/`. `canon build` folds the log into docs. Because assignment happens once, in
+one writer, IDs are stable and re-running either step is idempotent.
+
 ## Configuration
 
 canon ships the studio markdownlint baseline as its default. A repo overrides it with a

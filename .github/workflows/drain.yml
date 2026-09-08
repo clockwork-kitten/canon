@@ -1,0 +1,57 @@
+name: canon-drain
+
+# The single-writer "drain": canon's elected leader that turns conflict-free
+# intake/ submissions into sequenced events in log/, then projects the docs.
+#
+# Concurrency 1 (cancel-in-progress: false) makes this the *only* writer running
+# at a time — the property git's leaderless merges can't provide — so it can
+# hand out monotonic IDs with no coordination. It runs after merge to main and
+# commits the results back, so IDs are assigned post-merge, never at author time.
+#
+# NOTE: pushing to a protected main needs a trusted identity with a
+# branch-protection bypass — the built-in GITHUB_TOKEN with `contents: write`, or
+# (the packaged path) a GitHub App installation token. Wire that before enabling.
+#
+# Inert until an intake/ folder exists, so adding this workflow changes nothing
+# until a repo actually adopts the log.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "intake/**"
+
+concurrency:
+  group: canon-log
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Drain intake into the log
+        run: bun run drain
+      - name: Project the log into docs
+        run: bun run build
+      - name: Commit sequenced events and projected docs
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "canon-drain[bot]"
+            git config user.email "canon-drain@users.noreply.github.com"
+            git add -A
+            git commit -m "chore(canon): drain intake and project docs"
+            git push
+          else
+            echo "Nothing to drain."
+          fi

@@ -38,3 +38,8 @@ jobs:
         run: bun run check
       - name: Verify llms.txt is up to date (dogfood)
         run: bun run check:llms
+      - name: Verify the projected log docs are up to date
+        # Inert until the repo has a log/; once it does, this fails the build if
+        # any generated decision doc or graph.json was hand-edited or left stale.
+        if: hashFiles('log/**') != ''
+        run: bun run check:build

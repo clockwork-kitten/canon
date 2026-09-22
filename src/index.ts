@@ -46,6 +46,43 @@ export {
   type Reference,
   type ReferenceIssue,
 } from "./lint/references.ts";
+export { drain, type DrainResult } from "./log/drain.ts";
+export {
+  contentId,
+  createIntake,
+  DISPLAY_PREFIX,
+  displayNumber,
+  formatDisplay,
+  type IntakeRequest,
+  type LogEvent,
+  type RecordType,
+  SCHEMA_VERSION,
+} from "./log/events.ts";
+export {
+  type DecisionRecord,
+  project,
+  type RecordStatus,
+} from "./log/project.ts";
+export {
+  GRAPH_PATH,
+  OUTPUT_DIR,
+  renderDecision,
+  renderGraph,
+  renderIndex,
+  renderProjection,
+  type RenderedFile,
+} from "./log/render.ts";
+export {
+  INTAKE_DIR,
+  LOG_DIR,
+  readIntake,
+  readLog,
+  removeIntake,
+  serializeEvent,
+  type StagedIntake,
+  writeEvent,
+  writeIntake,
+} from "./log/store.ts";
 export {
   type DocMeta,
   extractDocMeta,

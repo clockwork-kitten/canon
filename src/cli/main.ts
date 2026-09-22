@@ -1,11 +1,22 @@
 #!/usr/bin/env bun
-import { existsSync, globSync, readFileSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, globSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, relative } from "node:path";
 import process from "node:process";
 
 import { ConfigError, resolveConfig } from "../config/resolve.ts";
 import { fixContents, formatIssues, lintFiles } from "../lint/markdown.ts";
 import { checkReferences, formatReferenceIssues } from "../lint/references.ts";
+import { drain } from "../log/drain.ts";
+import { createIntake } from "../log/events.ts";
+import { project } from "../log/project.ts";
+import { type RenderedFile, renderProjection } from "../log/render.ts";
+import {
+  readIntake,
+  readLog,
+  removeIntake,
+  writeEvent,
+  writeIntake,
+} from "../log/store.ts";
 import { generateLlms } from "../ops/llms.ts";
 
 /** Directory names never descended into when expanding globs. */
@@ -379,6 +390,193 @@ export async function runLlms(argv: string[], cwd: string): Promise<number> {
   return 0;
 }
 
+const ADD_DECISION_USAGE =
+  'usage: canon add-decision "<title>" [--body <text>] [--actor <handle>] [--supersedes <id>]';
+
+/** Parsed arguments for `canon add-decision`. */
+export type AddDecisionArgs = {
+  actor: string;
+  body: string;
+  supersedes: string | undefined;
+  title: string;
+};
+
+/**
+ * Parse `canon add-decision`. The single positional is the title; `--body`/`-b`
+ * gives the Markdown body, `--actor`/`-a` the author handle (defaulting to
+ * `$CANON_ACTOR` or `unknown`), and `--supersedes`/`-s` a prior decision id.
+ * Throws on unknown flags, a missing option value, or a missing/duplicate title.
+ */
+export function parseAddDecisionArgs(argv: string[]): AddDecisionArgs {
+  let title: string | undefined;
+  let body = "";
+  let actor = process.env.CANON_ACTOR ?? "unknown";
+  let supersedes: string | undefined;
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index] as string;
+    if (arg === "--body" || arg === "-b") {
+      const next = argv[index + 1];
+      if (next === undefined) {
+        throw new Error(`${arg} requires a value`);
+      }
+      body = next;
+      index += 1;
+    } else if (arg === "--actor" || arg === "-a") {
+      const next = argv[index + 1];
+      if (next === undefined) {
+        throw new Error(`${arg} requires a value`);
+      }
+      actor = next;
+      index += 1;
+    } else if (arg === "--supersedes" || arg === "-s") {
+      const next = argv[index + 1];
+      if (next === undefined) {
+        throw new Error(`${arg} requires a value`);
+      }
+      supersedes = next;
+      index += 1;
+    } else if (arg.startsWith("-")) {
+      throw new Error(`unknown option: ${arg}`);
+    } else if (title === undefined) {
+      title = arg;
+    } else {
+      throw new Error("only one title may be given (quote it)");
+    }
+  }
+  if (title === undefined || title.trim() === "") {
+    throw new Error("a decision title is required");
+  }
+  return { actor, body, supersedes, title };
+}
+
+/**
+ * Run `canon add-decision`: capture a decision into the `intake/` staging area.
+ * This deliberately assigns **no** ID — sequencing happens later in the single
+ * drain — so concurrent captures never conflict. Returns a process exit code.
+ */
+export function runAddDecision(argv: string[], cwd: string): number {
+  let args: AddDecisionArgs;
+  try {
+    args = parseAddDecisionArgs(argv);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    console.error(ADD_DECISION_USAGE);
+    return 2;
+  }
+  const intake = createIntake({
+    actor: args.actor,
+    body: args.body,
+    title: args.title,
+    type: "decision",
+    ...(args.supersedes ? { supersedes: args.supersedes } : {}),
+  });
+  const path = writeIntake(cwd, intake);
+  console.error(`canon add-decision · staged ${path}`);
+  console.error("An ID is assigned when `canon drain` runs on merge to main.");
+  return 0;
+}
+
+/**
+ * Run `canon drain`: the single-writer step. Fold every staged intake into the
+ * log, assigning sequence and display IDs, then consume the staged files. Safe
+ * to re-run — already-committed intakes are skipped, not duplicated. Returns a
+ * process exit code.
+ */
+export function runDrain(_argv: string[], cwd: string): number {
+  const existing = readLog(cwd);
+  const staged = readIntake(cwd);
+  const result = drain(
+    existing,
+    staged.map((entry) => entry.request),
+  );
+
+  for (const event of result.added) {
+    writeEvent(cwd, event);
+  }
+  // Consume every processed staging file: newly committed ones and duplicates
+  // whose content already lives in the log.
+  for (const entry of staged) {
+    removeIntake(cwd, entry.file);
+  }
+
+  console.error(`canon drain · ${result.added.length} committed, ${result.skipped.length} skipped`);
+  for (const event of result.added) {
+    console.error(`  + ${event.display} · ${event.title}`);
+  }
+  return 0;
+}
+
+const BUILD_USAGE = "usage: canon build [--check]";
+
+/** Parsed arguments for `canon build`. */
+export type BuildArgs = {
+  /** Verify committed artifacts match the projection instead of writing them. */
+  check: boolean;
+};
+
+/** Parse `canon build`. `--check` verifies the projection instead of writing it. */
+export function parseBuildArgs(argv: string[]): BuildArgs {
+  let check = false;
+  for (const arg of argv) {
+    if (arg === "--check") {
+      check = true;
+    } else {
+      throw new Error(`unknown option: ${arg}`);
+    }
+  }
+  return { check };
+}
+
+/**
+ * Run `canon build`: project the log into decision docs and `graph.json`. With
+ * `--check` it regenerates in memory and diffs against the committed files,
+ * failing (exit 1) on any drift — the gate that keeps generated docs from being
+ * hand-edited into a second source of truth. Otherwise it writes them. Returns a
+ * process exit code.
+ */
+export function runBuild(argv: string[], cwd: string): number {
+  let args: BuildArgs;
+  try {
+    args = parseBuildArgs(argv);
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    console.error(BUILD_USAGE);
+    return 2;
+  }
+
+  const files: RenderedFile[] = renderProjection(project(readLog(cwd)));
+
+  if (args.check) {
+    const drifted: string[] = [];
+    for (const file of files) {
+      const path = join(cwd, file.path);
+      const current = existsSync(path) ? readFileSync(path, "utf8") : undefined;
+      if (current !== file.content) {
+        drifted.push(file.path);
+      }
+    }
+    if (drifted.length > 0) {
+      console.error(
+        `canon build · ${drifted.length} generated file(s) out of date · run \`canon build\`:`,
+      );
+      for (const path of drifted) {
+        console.error(`  ${path}`);
+      }
+      return 1;
+    }
+    console.error(`canon build · ${files.length} generated file(s) up to date`);
+    return 0;
+  }
+
+  for (const file of files) {
+    const path = join(cwd, file.path);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, file.content);
+  }
+  console.error(`canon build · wrote ${files.length} file(s)`);
+  return 0;
+}
+
 async function main(): Promise<number> {
   const [subcommand, ...rest] = process.argv.slice(2);
   if (subcommand === "check") {
@@ -390,9 +588,24 @@ async function main(): Promise<number> {
   if (subcommand === "llms") {
     return runLlms(rest, process.cwd());
   }
-  console.error(USAGE);
-  console.error(FIX_USAGE);
-  console.error(LLMS_USAGE);
+  if (subcommand === "add-decision") {
+    return runAddDecision(rest, process.cwd());
+  }
+  if (subcommand === "drain") {
+    return runDrain(rest, process.cwd());
+  }
+  if (subcommand === "build") {
+    return runBuild(rest, process.cwd());
+  }
+  for (const usage of [
+    USAGE,
+    FIX_USAGE,
+    LLMS_USAGE,
+    ADD_DECISION_USAGE,
+    BUILD_USAGE,
+  ]) {
+    console.error(usage);
+  }
   return 2;
 }
 

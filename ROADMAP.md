@@ -40,7 +40,22 @@ substrate rather than a parallel design.
 | 2 | The drain (single-writer serializer) | ☑ | `src/log/drain.ts`; pure `drain(existing, pending)` assigns monotonic `seq` + display id, idempotent skip of already-committed intake; the Action just calls it |
 | 3 | Deterministic projector + renderers | ☑ | `src/log/project.ts` folds events → records (derives `accepted`/`superseded` + back-links); `src/log/render.ts` emits `decisions/*.md`, an index, and `graph.json` |
 | 4 | CLI + store + drain Action | ☑ | `canon add-decision` / `drain` / `build [--check]`; `.github/workflows/drain.yml` (concurrency 1, inert until `intake/` exists); CI projection-lock via `check:build` |
-| 5 | Expansion (deferred) | ☐ | More record types (TERM/NOTE), compaction (fold state → snapshot), federation, coverage — layered additively on the log |
+| 5 | Expansion (deferred) | ☐ | More record types (TERM/NOTE), compaction, federation, coverage — layered additively on the log; tracked in v0.3 below |
+
+## v0.3 — Operationalize the log + expand record types
+
+The MVS proves the model locally; these turn it into something repos actually run
+on, then grow the record vocabulary on the same substrate. Ordered by dependency:
+wiring the drain unblocks real adoption, which surfaces what the next types and
+gates need to be.
+
+| # | Task | Status | Notes |
+| --- | --- | --- | --- |
+| 1 | Wire the drain to protected `main` | ☐ | The one stubbed piece: a trusted bot identity (built-in `GITHUB_TOKEN` + branch-protection bypass, or a **GitHub App** as the packaged multi-repo install vector) so `drain.yml` can push sequenced events + projected docs. Pure serializer is already tested — this is deployment glue |
+| 2 | First real adoption (dogfood the log) | ☐ | Stand up an actual `intake/` + `log/`, likely in the `home` spine repo, and record live decisions through it; validates the intake → drain → build loop against real merge traffic |
+| 3 | Add `TERM` + `NOTE` record types | ☐ | Glossary + notes collections on the same event log; per-type display prefixes, schemas, and renderers; exercises the "grain as projection policy" idea (fine-grained wiki output) |
+| 4 | Compaction | ☐ | Fold a record's event chain into a snapshot and keep the log as the audit trail; the projector already produces `events → state`, so this is a truncation, not a rewrite |
+| 5 | Deferred v2 amendments the substrate didn't dissolve | ☐ | Mainly **semantic-advisory gates** (atomicity / duplicate-concept as confidence + human override) and, once federation is real, the **minimal public cross-org manifest** + degraded/offline resolution. See the ontology spec §15 |
 
 ## v0.2b — Schema-aware entry operations + cross-repo intake
 

@@ -94,6 +94,28 @@ assigns each a monotonic `DEC-000N` display ID plus an opaque content-addressed 
 appends it to `log/`. `canon build` folds the log into docs. Because assignment happens once, in
 one writer, IDs are stable and re-running either step is idempotent.
 
+### Wiring the drain (deployment)
+
+The `.github/workflows/drain.yml` Action is inert until an `intake/` folder exists, and
+pushing its results to a **protected `main`** needs a trusted identity on the branch's
+bypass list. Two supported setups:
+
+- **GitHub App (packaged, multi-repo).** Install a GitHub App with `contents: write` on
+  each adopting repo, then set the repo/org variable `CANON_DRAIN_APP_ID` and the secret
+  `CANON_DRAIN_APP_PRIVATE_KEY`. The Action mints a short-lived installation token and
+  pushes as the app. Add that app to the branch-protection (or ruleset) **bypass** list so
+  its push lands without opening a PR. This is one install vector that works identically
+  across every repo on the log.
+- **Built-in `GITHUB_TOKEN` (single-repo fallback).** Leave `CANON_DRAIN_APP_ID` unset and
+  the Action pushes as `github-actions[bot]` using the workflow token. Add
+  `github-actions[bot]` to the branch's bypass list (or a ruleset bypass) for the push to
+  land.
+
+The Action serializes on a single-concurrency group (the elected leader), skips its own
+drain commit to avoid a re-trigger loop, and rebases-and-retries if an unrelated merge
+reaches `main` between checkout and push. Everything else — ID assignment and projection —
+is the same pure, tested code `canon drain` / `canon build` run locally.
+
 ## Configuration
 
 canon ships the studio markdownlint baseline as its default. A repo overrides it with a

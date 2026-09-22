@@ -8,9 +8,21 @@ name: canon-drain
 # hand out monotonic IDs with no coordination. It runs after merge to main and
 # commits the results back, so IDs are assigned post-merge, never at author time.
 #
-# NOTE: pushing to a protected main needs a trusted identity with a
-# branch-protection bypass — the built-in GITHUB_TOKEN with `contents: write`, or
-# (the packaged path) a GitHub App installation token. Wire that before enabling.
+# Trusted push identity (the piece that was stubbed): pushing to a protected
+# main needs an identity on the branch's bypass list. Two supported options:
+#
+#   1. GitHub App (the packaged multi-repo path). Set the repo/org variable
+#      CANON_DRAIN_APP_ID and the secret CANON_DRAIN_APP_PRIVATE_KEY for a
+#      GitHub App installed on the repo with `contents: write`, and add that app
+#      to the branch-protection / ruleset bypass list. This job then mints a
+#      short-lived installation token and pushes as the app — one install vector
+#      that works identically across every repo that adopts canon.
+#   2. Built-in GITHUB_TOKEN (single-repo fallback). If CANON_DRAIN_APP_ID is
+#      unset, the job pushes as github-actions[bot] using the workflow token.
+#      Add github-actions[bot] to the branch's bypass list (or allow the token
+#      to bypass required checks via a ruleset) for the push to land.
+#
+# See "Wiring the drain" in README.md for the exact bypass configuration.
 #
 # Inert until an intake/ folder exists, so adding this workflow changes nothing
 # until a repo actually adopts the log.
@@ -30,10 +42,29 @@ permissions:
 
 jobs:
   drain:
+    # The drain consumes intake/ (a change under intake/**), so its own commit
+    # would re-trigger this workflow. A GITHUB_TOKEN push never spawns workflows,
+    # but an App-token push does — so guard the loop explicitly for both paths.
+    if: "${{ !startsWith(github.event.head_commit.message, 'chore(canon): drain') }}"
     runs-on: ubuntu-latest
     steps:
+      - name: Mint a GitHub App installation token
+        id: app-token
+        if: ${{ vars.CANON_DRAIN_APP_ID != '' }}
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.1.4
+        with:
+          app-id: ${{ vars.CANON_DRAIN_APP_ID }}
+          private-key: ${{ secrets.CANON_DRAIN_APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # Push with the app token when present, else the workflow token. The
+          # skipped app-token step yields an empty output, so `||` falls back.
+          token: ${{ steps.app-token.outputs.token || github.token }}
+          # Full history so the rebase-and-retry below can fast-forward onto any
+          # unrelated commit that landed on main between checkout and push.
+          fetch-depth: 0
       - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
@@ -45,13 +76,30 @@ jobs:
       - name: Project the log into docs
         run: bun run build
       - name: Commit sequenced events and projected docs
+        env:
+          # Attribute the commit to whichever identity is pushing.
+          GIT_AUTHOR_NAME: ${{ steps.app-token.outputs.token && 'canon-drain[bot]' || 'github-actions[bot]' }}
+          GIT_AUTHOR_EMAIL: ${{ steps.app-token.outputs.token && 'canon-drain@users.noreply.github.com' || '41898282+github-actions[bot]@users.noreply.github.com' }}
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config user.name "canon-drain[bot]"
-            git config user.email "canon-drain@users.noreply.github.com"
-            git add -A
-            git commit -m "chore(canon): drain intake and project docs"
-            git push
-          else
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
             echo "Nothing to drain."
+            exit 0
           fi
+          git config user.name "$GIT_AUTHOR_NAME"
+          git config user.email "$GIT_AUTHOR_EMAIL"
+          git add -A
+          git commit -m "chore(canon): drain intake and project docs"
+          # Serialized by the concurrency group, so no other drain races us; the
+          # only way the push fails non-fast-forward is an unrelated merge to
+          # main. Rebase onto it and retry a few times before giving up.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              echo "Pushed drained log + docs (attempt $attempt)."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt); rebasing onto main and retrying."
+            git pull --rebase origin main
+          done
+          echo "::error::could not push drained log after 5 attempts."
+          exit 1

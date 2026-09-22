@@ -51,7 +51,7 @@ gates need to be.
 
 | # | Task | Status | Notes |
 | --- | --- | --- | --- |
-| 1 | Wire the drain to protected `main` | ☐ | The one stubbed piece: a trusted bot identity (built-in `GITHUB_TOKEN` + branch-protection bypass, or a **GitHub App** as the packaged multi-repo install vector) so `drain.yml` can push sequenced events + projected docs. Pure serializer is already tested — this is deployment glue |
+| 1 | Wire the drain to protected `main` | ☑ | `drain.yml` mints a GitHub App installation token (`CANON_DRAIN_APP_ID` + `CANON_DRAIN_APP_PRIVATE_KEY`) — the packaged multi-repo install vector — and falls back to the built-in `GITHUB_TOKEN`; pushes as that identity with a self-trigger loop guard and rebase-and-retry. Operator-side: install the App and add it (or `github-actions[bot]`) to the branch bypass list. See "Wiring the drain" in the README |
 | 2 | First real adoption (dogfood the log) | ☐ | Stand up an actual `intake/` + `log/`, likely in the `home` spine repo, and record live decisions through it; validates the intake → drain → build loop against real merge traffic |
 | 3 | Add `TERM` + `NOTE` record types | ☐ | Glossary + notes collections on the same event log; per-type display prefixes, schemas, and renderers; exercises the "grain as projection policy" idea (fine-grained wiki output) |
 | 4 | Compaction | ☐ | Fold a record's event chain into a snapshot and keep the log as the audit trail; the projector already produces `events → state`, so this is a truncation, not a rewrite |

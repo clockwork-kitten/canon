@@ -336,7 +336,7 @@ describe("Canon 0.1.0 characterization", () => {
       queries: Array<{ query: string; recordIds: string[] }>;
       records: Array<{
         disposition: string;
-        evidence: Array<{ blobSha: string; path: string }>;
+        evidence: Array<{ blobSha: string; matches: string[]; path: string }>;
         id: string;
         repository: string;
         resolvedRefEvidence?: {
@@ -383,6 +383,19 @@ describe("Canon 0.1.0 characterization", () => {
     const recordsById = new Map(
       consumerCorpus.records.map((record) => [record.id, record]),
     );
+    for (const record of consumerCorpus.records) {
+      expect(
+        record.evidence.every(
+          ({ blobSha, matches, path }) =>
+            /^[a-f0-9]{40}$/.test(blobSha) &&
+            matches.length > 0 &&
+            path.length > 0,
+        ),
+      ).toBe(true);
+      expect(record.evidence.map(({ path }) => path)).toEqual(
+        record.evidence.map(({ path }) => path).toSorted(),
+      );
+    }
     for (const consumer of ledger.consumers) {
       const record = recordsById.get(consumer.evidenceRecord);
       expect(record).toMatchObject({
@@ -390,15 +403,6 @@ describe("Canon 0.1.0 characterization", () => {
         repository: consumer.repository,
         revision: consumer.revision,
       });
-      expect(
-        record?.evidence.every(
-          ({ blobSha, path }) =>
-            /^[a-f0-9]{40}$/.test(blobSha) && path.length > 0,
-        ),
-      ).toBe(true);
-      expect(record?.evidence.map(({ path }) => path)).toEqual(
-        record?.evidence.map(({ path }) => path).toSorted(),
-      );
     }
     expect(consumerCorpus.records).toEqual(
       consumerCorpus.records.toSorted((left, right) =>
@@ -424,17 +428,23 @@ describe("Canon 0.1.0 characterization", () => {
         }),
       }),
     );
-    const recordIds = new Set(
-      consumerCorpus.records.map(({ id }) => id),
-    );
     expect(consumerCorpus.queries.map(({ query }) => query)).toEqual(
       ledger.consumerDiscovery.queries,
     );
-    expect(
-      consumerCorpus.queries.every(({ recordIds: matchedIds }) =>
-        matchedIds.every((id) => recordIds.has(id)),
-      ),
-    ).toBe(true);
+    for (const { query, recordIds: recordedIds } of consumerCorpus.queries) {
+      const searchNeedle = query.slice(1, -1).toLowerCase();
+      const evidenceIds = consumerCorpus.records
+        .filter(({ evidence }) =>
+          evidence.some(({ matches }) =>
+            matches.some((match) =>
+              match.toLowerCase().includes(searchNeedle),
+            ),
+          ),
+        )
+        .map(({ id }) => id)
+        .toSorted();
+      expect(recordedIds).toEqual(evidenceIds);
+    }
     expect(ledger.surfaces.map(({ id }) => id).toSorted()).toEqual([
       "cli",
       "config",

@@ -6,24 +6,24 @@
   "normalization": {
     "evidence": "Evidence entries are sorted lexically by path and contain pinned Git blob SHAs plus only the matching integration/ref lines.",
     "records": "Records are sorted lexically by id; each result has an explicit current-consumer or exclusion disposition.",
-    "search": "Equivalent matches from multiple queries collapse into one repository record; Canon self-matches and prose-only examples are excluded."
+    "search": "Equivalent matches from multiple queries collapse into one repository record. Query recordIds include every record with matching evidence, including records explicitly excluded as Canon self-matches or pre-Canon workflows; prose-only files within a repository are omitted unless they are the only evidence for that query."
   },
   "queries": [
     {
       "query": "\"@clockwork-kitten/canon\"",
-      "recordIds": ["ops", "standards"]
+      "recordIds": ["canon-self", "ops", "standards"]
     },
     {
       "query": "\"canon check\"",
-      "recordIds": ["standards"]
+      "recordIds": ["canon-self", "ops", "standards"]
     },
     {
       "query": "\"canon-ref\"",
-      "recordIds": ["standards"]
+      "recordIds": ["canon-self", "ops", "standards"]
     },
     {
       "query": "\"clockwork-kitten/canon@\"",
-      "recordIds": ["standards"]
+      "recordIds": ["canon-self"]
     },
     {
       "query": "\"markdown-conformance.yml@\"",
@@ -31,6 +31,31 @@
     }
   ],
   "records": [
+    {
+      "id": "canon-self",
+      "repository": "clockwork-kitten/canon",
+      "revision": "7162ec763a9e99fbe4ef047e6ffb7fcfb5a8e18c",
+      "disposition": "excluded-self-match",
+      "integration": "Searches match Canon's own package documentation, CLI documentation, and canon-ref test fixture name; these are self-references, not external consumers.",
+      "canonRef": null,
+      "evidence": [
+        {
+          "path": "README.md",
+          "blobSha": "221d958f3fc40e896a35ff03529ee2708d904bb7",
+          "matches": [
+            "canon check                 # markdown lint + reference integrity over **/*.md",
+            "bun add -D @clockwork-kitten/canon@0.1.0  # pinned"
+          ]
+        },
+        {
+          "path": "src/lint/references.test.ts",
+          "blobSha": "36989ac676ec8a5d4c3f17d7809a5f7e9afa9b2e",
+          "matches": [
+            "dir = mkdtempSync(join(tmpdir(), \"canon-ref-\"));"
+          ]
+        }
+      ]
+    },
     {
       "id": "incubator",
       "repository": "clockwork-kitten/incubator",
@@ -86,6 +111,14 @@
           "matches": [
             "import { defineConfig } from \"@clockwork-kitten/canon\";"
           ]
+        },
+        {
+          "path": "docs/DECISIONS.md",
+          "blobSha": "311bb4da04e79076585b159b70afccf25aa88871",
+          "matches": [
+            "CLI (`canon check` / `fix` / `llms [--check]`), and release line",
+            "engine is `canon`, pinned by the workflow's `canon-ref` input"
+          ]
         }
       ]
     },
@@ -101,6 +134,8 @@
           "path": ".github/workflows/markdown-conformance.yml",
           "blobSha": "9dc5b218e034a58cea43442fdcc4e7ca1c940c16",
           "matches": [
+            "uses: clockwork-kitten/standards/.github/workflows/markdown-conformance.yml@v0.3.0",
+            "workflow pins canon through `canon-ref`",
             "repository: clockwork-kitten/canon",
             "ref: ${{ inputs.canon-ref }}",
             "bun .canon/src/cli/main.ts \"${args[@]}\""
@@ -124,6 +159,7 @@
           "path": "packages/conform/src/docs/run.ts",
           "blobSha": "0c95dfacbaf6819120f7a2fe6d7ffb9de3dffc12",
           "matches": [
+            "/** Extra reference-ignore substrings forwarded to canon check. */",
             "const canonBin = resolveBin(\"@clockwork-kitten/canon\", \"canon\");"
           ]
         }

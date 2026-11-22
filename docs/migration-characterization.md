@@ -31,8 +31,10 @@ dispositions belong to Crux. There are no command, rule-ID, or suppression alias
 compatibility window. Known consumers (`standards` and `ops`) are inventory only and require
 separate repo-local cutovers before retirement or rename work. The consumer corpus pins repository
 revisions, evidence paths and Git blob SHAs, matching integration/ref lines, and dispositions. It
-also records `incubator` as an explicit exclusion: its pinned Standards v0.4.0 workflow predates
-Canon extraction and is not a current Canon consumer.
+maps every search query to records containing evidence for that query, including an explicit
+excluded `canon-self` record rather than attributing self-matches to a consumer. It also records
+`incubator` as an explicit exclusion: its pinned Standards v0.4.0 workflow predates Canon extraction
+and is not a current Canon consumer.
 
 ## Pull request 6 disposition
 

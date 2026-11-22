@@ -127,7 +127,7 @@
       "\"clockwork-kitten/canon@\"",
       "\"markdown-conformance.yml@\""
     ],
-    "note": "Normalized query results, pinned path/blob evidence, and explicit dispositions are committed in consumers.json. Self references and documentation-only examples were excluded. Incubator remains on the pre-extraction Standards v0.4.0 workflow and is explicitly recorded there as not a current Canon consumer."
+    "note": "Normalized query results, pinned path/blob evidence, and explicit dispositions are committed in consumers.json. Canon self-matches are recorded against the queries that produce them and excluded from consumer classification; unrelated documentation-only files are omitted. Incubator remains on the pre-extraction Standards v0.4.0 workflow and is explicitly recorded there as not a current Canon consumer."
   },
   "pullRequests": [
     {

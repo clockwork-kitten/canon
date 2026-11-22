@@ -1,0 +1,273 @@
+{
+  "publicApi": [
+    "CONFIG_FILENAMES",
+    "ConfigError",
+    "DEFAULT_LLMS_OUTPUT",
+    "DISPLAY_PREFIX",
+    "GRAPH_PATH",
+    "INTAKE_DIR",
+    "LOG_DIR",
+    "OUTPUT_DIR",
+    "SCHEMA_VERSION",
+    "STUDIO_MARKDOWNLINT_BASELINE",
+    "checkReferences",
+    "contentId",
+    "createIntake",
+    "deepMerge",
+    "defineConfig",
+    "discoverConfigPath",
+    "displayNumber",
+    "drain",
+    "extractDocMeta",
+    "extractReferences",
+    "fixContents",
+    "formatDisplay",
+    "formatIssues",
+    "formatReferenceIssues",
+    "generateLlms",
+    "isPlainObject",
+    "lintContent",
+    "lintFiles",
+    "loadConfigFile",
+    "project",
+    "readIntake",
+    "readLog",
+    "removeIntake",
+    "renderDecision",
+    "renderGraph",
+    "renderIndex",
+    "renderLlms",
+    "renderProjection",
+    "resolveConfig",
+    "resolveLlmsConfig",
+    "resolveMarkdownlintConfig",
+    "resolveReferencesConfig",
+    "serializeEvent",
+    "writeEvent",
+    "writeIntake"
+  ],
+  "config": {
+    "discoveryOrder": [
+      "canon.config.ts",
+      "canon.config.mts",
+      "canon.config.mjs",
+      "canon.config.js",
+      "canon.config.jsonc",
+      "canon.config.json"
+    ],
+    "llms": {
+      "output": "llms.txt",
+      "project": "Canon characterization",
+      "sections": [
+        {
+          "prefix": "",
+          "shallow": true,
+          "title": "Root"
+        },
+        {
+          "prefix": "docs/",
+          "shallow": false,
+          "title": "Guides"
+        }
+      ],
+      "summary": "A deterministic documentation fixture."
+    },
+    "markdownlint": {
+      "default": true,
+      "MD013": {
+        "line_length": 80
+      }
+    },
+    "references": {
+      "ignore": [
+        "characterization-external/"
+      ]
+    },
+    "source": "<fixture>/canon.config.jsonc"
+  },
+  "documentation": {
+    "fixes": [
+      {
+        "changed": true,
+        "content": "# Bad heading\n\nTrailing spaces.  \n",
+        "file": "bad.md",
+        "residue": []
+      }
+    ],
+    "lint": [
+      {
+        "description": "No space after hash on atx style heading",
+        "file": "bad.md",
+        "line": 1,
+        "rule": "MD018/no-missing-space-atx"
+      },
+      {
+        "description": "First line in a file should be a top-level heading",
+        "file": "bad.md",
+        "line": 1,
+        "rule": "MD041/first-line-heading"
+      }
+    ],
+    "references": {
+      "configured": [],
+      "withoutIgnore": [
+        {
+          "kind": "ref",
+          "line": 5,
+          "target": "characterization-external/runbook.md",
+          "file": "<fixture>/README.md"
+        }
+      ]
+    }
+  },
+  "llms": "# Canon characterization\n\n> A deterministic documentation fixture.\n\n## Root\n\n- [Fixture home](README.md): A deterministic fixture for Canon.\n\n## Guides\n\n- [Guide](docs/guide.md): Use the frozen behavior.\n",
+  "cli": {
+    "addDecision": {
+      "actor": "agent",
+      "body": "Body",
+      "supersedes": "DEC-0001",
+      "title": "Title"
+    },
+    "build": {
+      "check": true
+    },
+    "check": {
+      "configPath": "canon.config.jsonc",
+      "globs": [
+        "docs/**/*.md"
+      ],
+      "referenceIgnore": [
+        "characterization-external/"
+      ],
+      "references": false
+    },
+    "fix": {
+      "globs": [
+        "README.md"
+      ],
+      "llms": false
+    },
+    "llms": {
+      "check": true,
+      "globs": [
+        "**/*.md"
+      ]
+    }
+  },
+  "decisions": {
+    "drain": {
+      "added": [
+        {
+          "actor": "fixture",
+          "body": "Use the first approach.",
+          "display": "DEC-0001",
+          "id": "9ec468eaac3b65842eb6db15fd7440277927ad9a1bfff581faacfd47e2689944",
+          "op": "create",
+          "schemaVersion": 1,
+          "seq": 1,
+          "ts": "2026-01-02T03:04:05.000Z",
+          "title": "First approach",
+          "type": "decision"
+        },
+        {
+          "actor": "fixture",
+          "body": "Use the replacement.",
+          "display": "DEC-0002",
+          "id": "5badc6996f8cda4a70bd069cf0554084517739216fb2b87ac836d478272d2696",
+          "op": "create",
+          "schemaVersion": 1,
+          "seq": 2,
+          "ts": "2026-01-03T03:04:05.000Z",
+          "title": "Replacement approach",
+          "type": "decision",
+          "supersedes": "DEC-0001"
+        }
+      ],
+      "events": [
+        {
+          "actor": "fixture",
+          "body": "Use the first approach.",
+          "display": "DEC-0001",
+          "id": "9ec468eaac3b65842eb6db15fd7440277927ad9a1bfff581faacfd47e2689944",
+          "op": "create",
+          "schemaVersion": 1,
+          "seq": 1,
+          "ts": "2026-01-02T03:04:05.000Z",
+          "title": "First approach",
+          "type": "decision"
+        },
+        {
+          "actor": "fixture",
+          "body": "Use the replacement.",
+          "display": "DEC-0002",
+          "id": "5badc6996f8cda4a70bd069cf0554084517739216fb2b87ac836d478272d2696",
+          "op": "create",
+          "schemaVersion": 1,
+          "seq": 2,
+          "ts": "2026-01-03T03:04:05.000Z",
+          "title": "Replacement approach",
+          "type": "decision",
+          "supersedes": "DEC-0001"
+        }
+      ],
+      "skipped": []
+    },
+    "projection": [
+      {
+        "actor": "fixture",
+        "body": "Use the first approach.",
+        "display": "DEC-0001",
+        "id": "9ec468eaac3b65842eb6db15fd7440277927ad9a1bfff581faacfd47e2689944",
+        "ordinal": 1,
+        "status": "superseded",
+        "ts": "2026-01-02T03:04:05.000Z",
+        "title": "First approach",
+        "type": "decision",
+        "supersededBy": "DEC-0002"
+      },
+      {
+        "actor": "fixture",
+        "body": "Use the replacement.",
+        "display": "DEC-0002",
+        "id": "5badc6996f8cda4a70bd069cf0554084517739216fb2b87ac836d478272d2696",
+        "ordinal": 2,
+        "status": "accepted",
+        "ts": "2026-01-03T03:04:05.000Z",
+        "title": "Replacement approach",
+        "type": "decision",
+        "supersedes": "DEC-0001"
+      }
+    ],
+    "rendered": [
+      {
+        "content": "# DEC-0001 · First approach\n\n- Status: superseded\n- Author: fixture\n- Date: 2026-01-02T03:04:05.000Z\n- Superseded by: [DEC-0002](DEC-0002.md)\n\nUse the first approach.\n",
+        "path": "decisions/DEC-0001.md"
+      },
+      {
+        "content": "# DEC-0002 · Replacement approach\n\n- Status: accepted\n- Author: fixture\n- Date: 2026-01-03T03:04:05.000Z\n- Supersedes: [DEC-0001](DEC-0001.md)\n\nUse the replacement.\n",
+        "path": "decisions/DEC-0002.md"
+      },
+      {
+        "content": "# Decisions\n\n- [DEC-0001 First approach](DEC-0001.md) — superseded\n- [DEC-0002 Replacement approach](DEC-0002.md)\n",
+        "path": "decisions/index.md"
+      },
+      {
+        "content": "{\n  \"edges\": [\n    {\n      \"from\": \"DEC-0002\",\n      \"to\": \"DEC-0001\",\n      \"type\": \"supersedes\"\n    }\n  ],\n  \"nodes\": [\n    {\n      \"display\": \"DEC-0001\",\n      \"id\": \"9ec468eaac3b65842eb6db15fd7440277927ad9a1bfff581faacfd47e2689944\",\n      \"status\": \"superseded\",\n      \"title\": \"First approach\",\n      \"type\": \"decision\"\n    },\n    {\n      \"display\": \"DEC-0002\",\n      \"id\": \"5badc6996f8cda4a70bd069cf0554084517739216fb2b87ac836d478272d2696\",\n      \"status\": \"accepted\",\n      \"title\": \"Replacement approach\",\n      \"type\": \"decision\"\n    }\n  ]\n}\n",
+        "path": "graph.json"
+      }
+    ]
+  },
+  "unlocked": {
+    "acceptsBundleInput": false,
+    "acceptsLockInput": false,
+    "diagnostic": null,
+    "exitCode": 0,
+    "output": [
+      "canon check · markdown lint · studio baseline (no config file found)",
+      "1 file(s) conformant",
+      "canon check · references · studio baseline (no config file found)",
+      "1 file(s) with resolvable references"
+    ],
+    "status": null
+  }
+}

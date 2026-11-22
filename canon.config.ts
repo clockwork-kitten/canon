@@ -18,6 +18,8 @@ export default defineConfig({
       "Standalone documentation-repo conformance for the clockwork-kitten studio: markdown lint, reference integrity, and llms.txt generation over one pinned mdast/GFM parser and one config.",
   },
   // The reference checker resolves internal cross-references on disk. canon's
-  // own docs cite only external URLs, so no cross-repo ignores are needed yet.
-  references: {},
+  // The characterization corpus intentionally carries one unresolved external
+  // reference to freeze ignore behavior; keep that synthetic namespace ignored
+  // while checking this repository itself.
+  references: { ignore: ["characterization-external/"] },
 });

@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "kind": "canon-consumer-discovery-corpus",
+  "observedAt": "2026-11-21",
+  "scope": "clockwork-kitten organization default branches",
+  "normalization": {
+    "evidence": "Evidence entries are sorted lexically by path and contain pinned Git blob SHAs plus only the matching integration/ref lines.",
+    "records": "Records are sorted lexically by id; each result has an explicit current-consumer or exclusion disposition.",
+    "search": "Equivalent matches from multiple queries collapse into one repository record; Canon self-matches and prose-only examples are excluded."
+  },
+  "queries": [
+    {
+      "query": "\"@clockwork-kitten/canon\"",
+      "recordIds": ["ops", "standards"]
+    },
+    {
+      "query": "\"canon check\"",
+      "recordIds": ["standards"]
+    },
+    {
+      "query": "\"canon-ref\"",
+      "recordIds": ["standards"]
+    },
+    {
+      "query": "\"clockwork-kitten/canon@\"",
+      "recordIds": ["standards"]
+    },
+    {
+      "query": "\"markdown-conformance.yml@\"",
+      "recordIds": ["incubator", "ops", "standards"]
+    }
+  ],
+  "records": [
+    {
+      "id": "incubator",
+      "repository": "clockwork-kitten/incubator",
+      "revision": "b10e487fc4b8f16e8227f022ab380efd3c6401ed",
+      "disposition": "excluded-pre-canon-workflow",
+      "integration": "The only matching workflow calls Standards v0.4.0, whose pinned implementation runs the pre-extraction Conform engine and contains no Canon checkout, package import, or canon-ref.",
+      "canonRef": null,
+      "evidence": [
+        {
+          "path": ".github/workflows/conformance.yml",
+          "blobSha": "98b5f3cc534ad5ad90ef9ff6b86ee25dcbcc057c",
+          "matches": [
+            "uses: clockwork-kitten/standards/.github/workflows/markdown-conformance.yml@v0.4.0"
+          ]
+        }
+      ],
+      "resolvedRefEvidence": {
+        "repository": "clockwork-kitten/standards",
+        "ref": "v0.4.0",
+        "revision": "f110cd93a8821b7468f8d955e05eb99494530c1c",
+        "path": ".github/workflows/markdown-conformance.yml",
+        "blobSha": "395185bc587c64fdf701f29016bc52d4e1db262e",
+        "matches": [
+          "repository: clockwork-kitten/standards",
+          "bun \"$ENGINE_ROOT/packages/conform/src/cli/main.ts\" \"${args[@]}\""
+        ],
+        "absenceChecks": [
+          "@clockwork-kitten/canon",
+          "clockwork-kitten/canon",
+          "canon-ref"
+        ]
+      }
+    },
+    {
+      "id": "ops",
+      "repository": "clockwork-kitten/ops",
+      "revision": "7be4f6d33edd65e88d01e60d28c29bb7ee0e7285",
+      "disposition": "current-consumer",
+      "integration": "The docs workflow calls Standards markdown-conformance v0.6 and supplies a Canon config that imports the Canon package.",
+      "canonRef": "v0.1",
+      "evidence": [
+        {
+          "path": ".github/workflows/docs.yml",
+          "blobSha": "e23d1722ebc5d44267751c24e0ea611b4a312ef4",
+          "matches": [
+            "uses: clockwork-kitten/standards/.github/workflows/markdown-conformance.yml@v0.6",
+            "config: canon.config.ts"
+          ]
+        },
+        {
+          "path": "canon.config.ts",
+          "blobSha": "ac62fc89458044b1c3adb0234eb9ace94ee66d1a",
+          "matches": [
+            "import { defineConfig } from \"@clockwork-kitten/canon\";"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "standards",
+      "repository": "clockwork-kitten/standards",
+      "revision": "50f290ddce8984ace6f9c7a5e161242f9ee4b0e5",
+      "disposition": "current-consumer",
+      "integration": "Conform resolves the Canon binary; the reusable workflow checks out Canon at its canon-ref and dispatches its CLI.",
+      "canonRef": "v0.1",
+      "evidence": [
+        {
+          "path": ".github/workflows/markdown-conformance.yml",
+          "blobSha": "9dc5b218e034a58cea43442fdcc4e7ca1c940c16",
+          "matches": [
+            "repository: clockwork-kitten/canon",
+            "ref: ${{ inputs.canon-ref }}",
+            "bun .canon/src/cli/main.ts \"${args[@]}\""
+          ]
+        },
+        {
+          "path": "canon.config.ts",
+          "blobSha": "106a732c81a81b2e0e2fed2869b122f6f34408f9",
+          "matches": [
+            "import { defineConfig } from \"@clockwork-kitten/canon\";"
+          ]
+        },
+        {
+          "path": "package.json",
+          "blobSha": "aa5bc8fd8526b5d14bfdb5bfaa13ae4c3f9b54f8",
+          "matches": [
+            "\"canon\": \"bun ./node_modules/@clockwork-kitten/canon/src/cli/main.ts\""
+          ]
+        },
+        {
+          "path": "packages/conform/src/docs/run.ts",
+          "blobSha": "0c95dfacbaf6819120f7a2fe6d7ffb9de3dffc12",
+          "matches": [
+            "const canonBin = resolveBin(\"@clockwork-kitten/canon\", \"canon\");"
+          ]
+        }
+      ]
+    }
+  ]
+}

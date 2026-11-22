@@ -39,6 +39,8 @@
   ],
   "scripts": {
     "test": "vitest run --coverage",
+    "test:characterization": "vitest run test/characterization/canon-v0.1.0/characterization.test.ts",
+    "test:update-characterization": "UPDATE_CHARACTERIZATION=1 vitest run test/characterization/canon-v0.1.0/characterization.test.ts",
     "typecheck": "tsc --noEmit",
     "check": "bun src/cli/main.ts check",
     "fix": "bun src/cli/main.ts fix",

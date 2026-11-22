@@ -126,4 +126,6 @@ bun run check:llms  # verify llms.txt is up to date
 ```
 
 See [ROADMAP.md](ROADMAP.md) for what ships next (schema-aware entry operations and cross-repo
-intake).
+intake). The frozen Canon 0.1.0 behavior and consumer inventory used to evaluate the future T0
+engine migration are documented in
+[docs/migration-characterization.md](docs/migration-characterization.md).

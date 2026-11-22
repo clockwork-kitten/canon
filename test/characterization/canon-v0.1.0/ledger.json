@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "kind": "canon-characterization-and-migration-inventory",
+  "authority": "characterization-only",
+  "authorityNote": "This freezes observed Canon 0.1.0 behavior for T0 parity. Crux owns future canonical migration dispositions; this file creates no rule, command, suppression, or compatibility alias.",
+  "package": {
+    "name": "@clockwork-kitten/canon",
+    "version": "0.1.0",
+    "registry": "https://npm.pkg.github.com",
+    "sourceRevision": "7162ec763a9e99fbe4ef047e6ffb7fcfb5a8e18c"
+  },
+  "fixture": {
+    "id": "canon-v0.1.0",
+    "revision": 2,
+    "golden": "expected.json",
+    "consumerCorpus": "consumers.json",
+    "normalization": [
+      "repository roots are replaced with <fixture>",
+      "findings retain stable file, line, rule, detail, and exit classifications",
+      "decision nonce and timestamp inputs are fixed",
+      "object keys are recursively sorted and undefined properties are omitted",
+      "unordered public exports, findings, reference issues, CLI vectors by id, consumer records by id, and rendered-file lists by path are explicitly sorted",
+      "order-sensitive command output, decision sequences, and configuration arrays retain observed stable order"
+    ]
+  },
+  "compatibilityBundle": {
+    "id": null,
+    "affectsVerdict": false,
+    "reason": "Canon 0.1.0 predates Conform compatibility bundles and accepts no bundle input."
+  },
+  "verdictDependencies": {
+    "fullTransitiveClosure": "bun.lock",
+    "jsonc-parser": "3.3.1",
+    "markdownlint": "0.38.0",
+    "mdast-util-from-markdown": "2.0.3",
+    "mdast-util-gfm": "3.1.0",
+    "mdast-util-to-string": "4.0.0",
+    "micromark-extension-gfm": "3.0.0",
+    "unist-util-visit": "5.1.0"
+  },
+  "surfaces": [
+    {
+      "id": "docs.markdown",
+      "owner": "Canon",
+      "observed": "Markdown lint and autofix use markdownlint 0.38.0; structural parsing uses the pinned mdast/GFM stack.",
+      "migration": "retain-for-later-contract-adoption",
+      "proof": ["expected.json#/documentation", "fixture/README.md", "fixture/docs/guide.md"]
+    },
+    {
+      "id": "docs.references",
+      "owner": "Canon",
+      "observed": "Markdown links and backtick paths are checked on disk; configured ignore substrings bypass cross-repository backtick paths.",
+      "migration": "retain-for-later-contract-adoption",
+      "proof": ["expected.json#/documentation/references"]
+    },
+    {
+      "id": "docs.llms",
+      "owner": "Canon",
+      "observed": "llms.txt content is deterministic from title, first prose summary, configured project/summary, and first matching section.",
+      "migration": "retain-for-later-contract-adoption",
+      "proof": ["expected.json#/llms"]
+    },
+    {
+      "id": "config",
+      "owner": "Canon",
+      "observed": "TypeScript, JavaScript, JSONC, and JSON names are discovered in precedence order; config deep-merges the baseline unless extends is false.",
+      "migration": "replace-executable-config-with-jsonc-during-later-contract-adoption",
+      "proof": ["expected.json#/config"]
+    },
+    {
+      "id": "cli",
+      "owner": "Canon",
+      "observed": "Actual dispatch exposes check, fix, llms, add-decision, drain, and build. Committed process vectors freeze no-command/unknown help, each command's output, and applicable success (0), finding/drift (1), and invocation/config (2) classifications.",
+      "migration": "retain-commands-without-legacy-aliases",
+      "proof": ["expected.json#/cli/commands", "expected.json#/cli/vectors"]
+    },
+    {
+      "id": "decision.api",
+      "owner": "Canon",
+      "observed": "Fixed intake data drains to content-addressed, monotonic events and projects to deterministic Markdown and graph JSON.",
+      "migration": "retain-for-later-canonical-finding-adoption",
+      "proof": ["expected.json#/decisions"]
+    },
+    {
+      "id": "unlocked",
+      "owner": "Canon",
+      "observed": "Canon 0.1.0 has no lock, profile, bundle, canonical-result, or unlocked-status input/output; a no-config local check uses the studio baseline and can pass.",
+      "migration": "intentional-gap-for-later-contract-adoption",
+      "proof": ["expected.json#/unlocked"]
+    },
+    {
+      "id": "distribution",
+      "owner": "Canon",
+      "observed": "The package executes TypeScript under Bun from GitHub Packages and exports only the root source entry.",
+      "migration": "replace-with-compiled-node-esm-public-npm-in-later-contract-adoption",
+      "proof": ["package.json", "bun.lock"]
+    }
+  ],
+  "consumers": [
+    {
+      "repository": "clockwork-kitten/standards",
+      "revision": "50f290ddce8984ace6f9c7a5e161242f9ee4b0e5",
+      "integration": "Conform resolves the Canon binary and its reusable workflow checks out Canon.",
+      "canonRef": "v0.1",
+      "packageVersion": null,
+      "evidenceRecord": "standards",
+      "cutoverIssueRequired": true
+    },
+    {
+      "repository": "clockwork-kitten/ops",
+      "revision": "7be4f6d33edd65e88d01e60d28c29bb7ee0e7285",
+      "integration": "The docs workflow consumes Standards markdown-conformance v0.6 and canon.config.ts.",
+      "canonRef": "v0.1",
+      "packageVersion": null,
+      "evidenceRecord": "ops",
+      "cutoverIssueRequired": true
+    }
+  ],
+  "consumerDiscovery": {
+    "observedAt": "2026-11-21",
+    "scope": "clockwork-kitten organization default branches",
+    "corpus": "consumers.json",
+    "queries": [
+      "\"@clockwork-kitten/canon\"",
+      "\"canon check\"",
+      "\"canon-ref\"",
+      "\"clockwork-kitten/canon@\"",
+      "\"markdown-conformance.yml@\""
+    ],
+    "note": "Normalized query results, pinned path/blob evidence, and explicit dispositions are committed in consumers.json. Canon self-matches are recorded against the queries that produce them and excluded from consumer classification; unrelated documentation-only files are omitted. Incubator remains on the pre-extraction Standards v0.4.0 workflow and is explicitly recorded there as not a current Canon consumer."
+  },
+  "pullRequests": [
+    {
+      "repository": "clockwork-kitten/canon",
+      "number": 6,
+      "headRevision": "9441019afb8cfcda9f98ec7b6eb08b7c500d6389",
+      "observedAt": "2026-11-21",
+      "disposition": "retain",
+      "prerequisite": false,
+      "evidence": "Open, mergeable CLEAN, green conform check; changes only drain deployment workflow, README deployment instructions, and roadmap status.",
+      "rationale": "Independent deployment glue does not overlap this characterization corpus, is not a prerequisite, and should remain separately reviewable. Rebase only if main moves before its eventual merge."
+    }
+  ]
+}

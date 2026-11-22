@@ -1,0 +1,19 @@
+{
+  // Characterizes JSONC parsing, baseline opt-out, references, and llms defaults.
+  "extends": false,
+  "markdownlint": {
+    "default": true,
+    "MD013": { "line_length": 80 }
+  },
+  "references": {
+    "ignore": ["characterization-external/"]
+  },
+  "llms": {
+    "project": "Canon characterization",
+    "summary": "A deterministic documentation fixture.",
+    "sections": [
+      { "prefix": "", "shallow": true, "title": "Root" },
+      { "prefix": "docs/", "title": "Guides" }
+    ]
+  }
+}
